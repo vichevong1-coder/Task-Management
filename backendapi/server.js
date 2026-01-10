@@ -4,6 +4,7 @@ const connectDB = require('./src/config/db');
 const authRoutes = require('./src/routes/authRoutes');
 const taskRoutes = require('./src/routes/taskRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
+const { errorHandler } = require('./src/middlewares/errormiddleware');  
 
 dotenv.config();
 
@@ -20,6 +21,8 @@ app.use('/api/admin', adminRoutes);
 app.get('/', (req, res) => {
   res.send('Api is working...');
 });
+
+app.use(errorHandler);
 
 const Port = process.env.PORT || 3000;
 

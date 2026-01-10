@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const Task = require('./Task');
 
 const userSchema = new mongoose.Schema({
     username: {
@@ -33,6 +34,17 @@ const userSchema = new mongoose.Schema({
 }, {
     timestamps: true,   
 })
+
+// when delete a user thier task also get deleted
+userSchema.pre('findByIdAndDelete', async function(next) {
+    try {
+        const userId = this.getFilter()._id;
+        await Task.deleteMany({ assignedTo: userId });
+        next();
+    } catch (error) {
+        next(error);
+    }
+});
 
 const User = mongoose.model('User', userSchema);
 module.exports = User;  
