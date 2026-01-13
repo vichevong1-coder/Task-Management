@@ -22,7 +22,7 @@ export function LoginForm() {
 
     try {
       // Simulate API call - replace with your actual API endpoint
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch("http://localhost:3000/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -33,11 +33,17 @@ export function LoginForm() {
         throw new Error(data.message || "Login failed")
       }
 
-      const { token } = await response.json()
-      // Store JWT token - you can use localStorage, cookies, or a state management solution
-      localStorage.setItem("token", token)
+      const data = await response.json()
+      // Store JWT token
+      localStorage.setItem("token", data.token)
+      localStorage.setItem("user", JSON.stringify({
+        _id: data.id,
+        username: data.username,
+        email: data.email,
+        role: data.role
+      }))
 
-      // Redirect to dashboard or home page
+      // Redirect to dashboard
       window.location.href = "/dashboard"
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred")
