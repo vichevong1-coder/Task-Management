@@ -43,8 +43,12 @@ export function LoginForm() {
         role: data.role
       }))
 
-      // Redirect to dashboard
-      window.location.href = "/dashboard"
+      // Redirect based on user role
+      if (data.role === "admin") {
+        window.location.href = "/admin"
+      } else {
+        window.location.href = "/dashboard"
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred")
     } finally {

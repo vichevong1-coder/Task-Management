@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useAuth } from "@/src/context/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -49,6 +50,7 @@ function toDateInputValue(isoString: string): string {
 }
 
 export function Dashboard({ tasks: initialTasks, userName }: DashboardProps) {
+  const { logout } = useAuth()
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
   const [filter, setFilter] = useState<"all" | TaskStatus>("all")
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -153,7 +155,7 @@ export function Dashboard({ tasks: initialTasks, userName }: DashboardProps) {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">Welcome, {userName}</span>
-            <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+            <Button variant="outline" size="sm" className="gap-2 bg-transparent" onClick={logout}>
               <LogOut className="h-4 w-4" />
               Logout
             </Button>
