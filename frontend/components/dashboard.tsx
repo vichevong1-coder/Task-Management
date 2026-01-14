@@ -176,9 +176,9 @@ export function Dashboard({ tasks: initialTasks, userName }: DashboardProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       {/* Header/Navbar */}
-      <header className="border-b border-border bg-card">
+      <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-2">
             <ClipboardList className="h-6 w-6 text-blue-600" />
@@ -187,12 +187,12 @@ export function Dashboard({ tasks: initialTasks, userName }: DashboardProps) {
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">Welcome, {userName}</span>
             <Link href="/profile">
-              <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+              <Button variant="outline" size="sm" className="gap-2">
                 <User className="h-4 w-4" />
                 Profile
               </Button>
             </Link>
-            <Button variant="outline" size="sm" className="gap-2 bg-transparent" onClick={logout}>
+            <Button variant="outline" size="sm" className="gap-2" onClick={logout}>
               <LogOut className="h-4 w-4" />
               Logout
             </Button>
@@ -201,8 +201,8 @@ export function Dashboard({ tasks: initialTasks, userName }: DashboardProps) {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8">
-        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Card>
+        <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className="transform transition-transform hover:scale-105">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Tasks</CardTitle>
             </CardHeader>
@@ -210,15 +210,15 @@ export function Dashboard({ tasks: initialTasks, userName }: DashboardProps) {
               <p className="text-3xl font-bold text-foreground">{totalTasks}</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="transform transition-transform hover:scale-105">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-muted-foreground">{pendingTasks}</p>
+              <p className="text-3xl font-bold text-yellow-500">{pendingTasks}</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="transform transition-transform hover:scale-105">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">In Progress</CardTitle>
             </CardHeader>
@@ -226,7 +226,7 @@ export function Dashboard({ tasks: initialTasks, userName }: DashboardProps) {
               <p className="text-3xl font-bold text-blue-600">{inProgressTasks}</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="transform transition-transform hover:scale-105">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Completed</CardTitle>
             </CardHeader>
@@ -356,7 +356,7 @@ function TaskCard({
     switch (status) {
       case "pending":
         return (
-          <Badge variant="secondary" className="bg-muted text-muted-foreground">
+          <Badge variant="secondary" className="bg-red-100 text-red-700 hover:bg-red-100">
             Pending
           </Badge>
         )
@@ -368,21 +368,21 @@ function TaskCard({
   }
 
   return (
-    <Card className={`transition-opacity ${isCompleted ? "opacity-50" : ""}`}>
+    <Card className={`transform transition-transform hover:scale-105 ${isCompleted ? "opacity-60" : ""}`}>
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <div className="flex-1 min-w-0">
           <CardTitle className="text-base font-medium text-foreground truncate">{task.title}</CardTitle>
           {task.description && <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{task.description}</p>}
         </div>
         <div className="flex gap-1 ml-2 shrink-0">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(task)}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-500 hover:text-blue-600" onClick={() => onEdit(task)}>
             <Pencil className="h-4 w-4" />
             <span className="sr-only">Edit task</span>
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-destructive hover:text-destructive"
+            className="h-8 w-8 text-red-500 hover:text-red-600"
             onClick={() => onDelete(task._id)}
           >
             <Trash2 className="h-4 w-4" />
@@ -410,8 +410,8 @@ function TaskCard({
 
 function EmptyState({ onCreateTask }: { onCreateTask: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card py-16">
-      <ClipboardList className="mb-4 h-16 w-16 text-muted-foreground" />
+    <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800/50 py-16 text-center">
+      <ClipboardList className="mb-4 h-16 w-16 text-gray-400 dark:text-gray-500" />
       <h3 className="mb-2 text-lg font-medium text-foreground">No tasks found</h3>
       <p className="mb-6 text-muted-foreground">Create one to get started!</p>
       <Button onClick={onCreateTask} className="gap-2 bg-blue-600 hover:bg-blue-700 text-white">

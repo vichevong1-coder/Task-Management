@@ -5,6 +5,7 @@ import { Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useAuth } from "@/src/context/AuthContext"
 
 interface User {
   _id: string
@@ -19,15 +20,24 @@ interface UsersTableProps {
 }
 
 export function UsersTable({ onUserDeleted }: UsersTableProps) {
+  const { token } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function fetchUsers() {
+      if (!token) return
+
       try {
-        const response = await fetch("/api/admin/users")
-        const data = await response.json()
-        setUsers(data)
+        const response = await fetch("http://localhost:3000/api/admin/users", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setUsers(data)
+        }
       } catch (error) {
         console.error("Failed to fetch users:", error)
       } finally {
@@ -35,18 +45,25 @@ export function UsersTable({ onUserDeleted }: UsersTableProps) {
       }
     }
     fetchUsers()
-  }, [])
+  }, [token])
 
   const handleDelete = async (userId: string, username: string) => {
     const confirmed = window.confirm(
       `Are you sure you want to delete user "${username}"? This will also delete all their tasks. This action cannot be undone.`,
     )
 
-    if (confirmed) {
+    if (confirmed && token) {
       try {
-        await fetch(`/api/admin/user/${userId}`, { method: "DELETE" })
-        setUsers((prev) => prev.filter((user) => user._id !== userId))
-        onUserDeleted(userId)
+        const response = await fetch(`http://localhost:3000/api/admin/user/${userId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        if (response.ok) {
+          setUsers((prev) => prev.filter((user) => user._id !== userId))
+          onUserDeleted(userId)
+        }
       } catch (error) {
         console.error("Failed to delete user:", error)
       }

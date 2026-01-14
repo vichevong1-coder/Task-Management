@@ -66,7 +66,7 @@ export function TasksTable({ tasks, loading }: TasksTableProps) {
           <TableRow key={task._id}>
             <TableCell className="font-medium">{task.title}</TableCell>
             <TableCell>{getStatusBadge(task.status)}</TableCell>
-            <TableCell>{task.assignedTo.email}</TableCell>
+            <TableCell>{task.assignedTo ? task.assignedTo.email : "Unassigned"}</TableCell>
             <TableCell>{formatDate(task.dueDate)}</TableCell>
           </TableRow>
         ))}

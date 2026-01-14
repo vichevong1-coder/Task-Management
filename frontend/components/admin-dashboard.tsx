@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { UsersTable } from "@/components/users-table"
 import { TasksTable } from "@/components/tasks-table"
+import { useAuth } from "@/src/context/AuthContext"
 
 interface Stats {
   totalUsers: number
@@ -27,17 +28,34 @@ interface Task {
 }
 
 export function AdminDashboard() {
+  const { token } = useAuth()
   const [stats, setStats] = useState<Stats | null>(null)
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function fetchData() {
+      if (!token) return
+
       try {
-        const [statsResponse, tasksResponse] = await Promise.all([fetch("/api/admin/stats"), fetch("/api/admin/tasks")])
-        const [statsData, tasksData] = await Promise.all([statsResponse.json(), tasksResponse.json()])
-        setStats(statsData)
-        setTasks(tasksData)
+        const [statsResponse, tasksResponse] = await Promise.all([
+          fetch("http://localhost:3000/api/admin/stats", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+          fetch("http://localhost:3000/api/admin/tasks", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+        ])
+
+        if (statsResponse.ok && tasksResponse.ok) {
+          const [statsData, tasksData] = await Promise.all([statsResponse.json(), tasksResponse.json()])
+          setStats(statsData)
+          setTasks(tasksData)
+        }
       } catch (error) {
         console.error("Failed to fetch data:", error)
       } finally {
@@ -45,7 +63,7 @@ export function AdminDashboard() {
       }
     }
     fetchData()
-  }, [])
+  }, [token])
 
   const handleUserDeleted = (userId: string) => {
     setTasks((prev) => prev.filter((task) => task.assignedTo._id !== userId))
