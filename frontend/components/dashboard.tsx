@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { useAuth } from "@/src/context/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Pencil, Trash2, ChevronDown, Plus, ClipboardList, LogOut } from "lucide-react"
+import { Pencil, Trash2, ChevronDown, Plus, ClipboardList, LogOut, User } from "lucide-react"
 
 interface User {
   _id: string
@@ -50,11 +51,12 @@ function toDateInputValue(isoString: string): string {
 }
 
 export function Dashboard({ tasks: initialTasks, userName }: DashboardProps) {
-  const { logout } = useAuth()
+  const { logout, token } = useAuth()
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
-  const [filter, setFilter] = useState<"all" | TaskStatus>("all")
+  const [filter, setFilter] = useState<"all" | "pending" | "in-progress" | "completed">("all")
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [formData, setFormData] = useState({
     title: "",
@@ -102,46 +104,75 @@ export function Dashboard({ tasks: initialTasks, userName }: DashboardProps) {
     setIsModalOpen(true)
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.title.trim()) {
       setFormError("Title is required")
       return
     }
 
-    if (editingTask) {
-      // Update existing task
-      setTasks(
-        tasks.map((task) =>
-          task._id === editingTask._id
-            ? {
-                ...task,
-                title: formData.title,
-                description: formData.description,
-                status: formData.status,
-                dueDate: new Date(formData.dueDate).toISOString(),
-              }
-            : task,
-        ),
-      )
-    } else {
-      // Create new task
-      const newTask: Task = {
-        _id: Date.now().toString(),
-        title: formData.title,
-        description: formData.description,
-        status: formData.status,
-        dueDate: new Date(formData.dueDate).toISOString(),
-        assignedTo: {
-          _id: "current-user",
-          username: userName.toLowerCase().replace(" ", ""),
-          email: `${userName.toLowerCase().replace(" ", "")}@example.com`,
-        },
-        createdAt: new Date().toISOString(),
-      }
-      setTasks([...tasks, newTask])
+    if (!token) {
+      setFormError("You must be logged in to create a task")
+      return
     }
 
-    setIsModalOpen(false)
+    setIsSubmitting(true)
+
+    try {
+      if (editingTask) {
+        // Update existing task
+        const response = await fetch(`http://localhost:3000/api/tasks/update/${editingTask._id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            title: formData.title,
+            description: formData.description,
+            status: formData.status,
+            dueDate: new Date(formData.dueDate).toISOString(),
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to update task")
+        }
+
+        const updatedTask = await response.json()
+        setTasks(
+          tasks.map((task) => (task._id === editingTask._id ? updatedTask : task)),
+        )
+      } else {
+        // Create new task
+        const response = await fetch("http://localhost:3000/api/tasks/create", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            title: formData.title,
+            description: formData.description,
+            status: formData.status,
+            dueDate: new Date(formData.dueDate).toISOString(),
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to create task")
+        }
+
+        const newTask = await response.json()
+        setTasks([...tasks, newTask])
+      }
+
+      setIsModalOpen(false)
+      setFormError("")
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "An error occurred")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -155,6 +186,12 @@ export function Dashboard({ tasks: initialTasks, userName }: DashboardProps) {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">Welcome, {userName}</span>
+            <Link href="/profile">
+              <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+                <User className="h-4 w-4" />
+                Profile
+              </Button>
+            </Link>
             <Button variant="outline" size="sm" className="gap-2 bg-transparent" onClick={logout}>
               <LogOut className="h-4 w-4" />
               Logout
@@ -206,8 +243,8 @@ export function Dashboard({ tasks: initialTasks, userName }: DashboardProps) {
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2 bg-transparent">
-                Filter: {filter === "in-progress" ? "In Progress" : filter.charAt(0).toUpperCase() + filter.slice(1)}
+              <Button variant="outline" className="gap-2">
+                Filter: {filter === "in-progress" ? "In Progress" : filter === "completed" ? "Completed" : filter.charAt(0).toUpperCase() + filter.slice(1)}
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -291,11 +328,11 @@ export function Dashboard({ tasks: initialTasks, userName }: DashboardProps) {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+            <Button variant="outline" onClick={() => setIsModalOpen(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white">
-              {editingTask ? "Save Changes" : "Create Task"}
+            <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : editingTask ? "Save Changes" : "Create Task"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -358,12 +395,14 @@ function TaskCard({
           {getStatusBadge(task.status)}
           <span className="text-xs text-muted-foreground">Due: {formatDate(task.dueDate)}</span>
         </div>
-        <div className="mt-3 flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-medium text-blue-700">
-            {task.assignedTo.username.charAt(0).toUpperCase()}
+        {task.assignedTo && (
+          <div className="mt-3 flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-medium text-blue-700">
+              {task.assignedTo.username?.charAt(0).toUpperCase() || "U"}
+            </div>
+            <span className="text-xs text-muted-foreground">{task.assignedTo.username || "Unassigned"}</span>
           </div>
-          <span className="text-xs text-muted-foreground">{task.assignedTo.username}</span>
-        </div>
+        )}
       </CardContent>
     </Card>
   )
